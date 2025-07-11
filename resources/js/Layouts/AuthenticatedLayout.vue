@@ -72,6 +72,10 @@ watch(() => page.props.flash, (flash: any) => {
                                 <NavLink :href="route('products.index')" :active="route().current('products.*')">
                                     Produtos
                                 </NavLink>
+                                <NavLink :href="route('rentals.create')" :active="route().current('rentals.*')"
+                                    class="text-white bg-indigo-600 px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">
+                                    Novo Aluguel
+                                </NavLink>
                             </div>
                         </div>
 

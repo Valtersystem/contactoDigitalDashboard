@@ -44,6 +44,33 @@ export interface Product {
     replacement_value: number;
     is_active: boolean;
     category?: Category;
+    assets?: Asset[];
+}
+
+export interface Asset {
+    id: number;
+    product_id: number;
+    serial_number: string;
+    status: 'Disponível' | 'Alugado' | 'Em Manutenção' | 'Perdido';
+    notes: string | null;
+    created_at: string;
+}
+
+export interface Rental {
+    id: number;
+    client_id: number;
+    rental_date: string;
+    expected_return_date: string;
+    actual_return_date: string | null;
+    status: string;
+    client?: Client; // Relação opcional
+}
+
+export interface RentalItem {
+    id: number;
+    product_id: number;
+    asset_id: number | null;
+    quantity: number | null;
 }
 
 interface PaginationLink {

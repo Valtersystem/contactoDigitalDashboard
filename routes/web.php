@@ -6,6 +6,8 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AssetController;
+use App\Http\Controllers\RentalController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -29,6 +31,18 @@ Route::middleware('auth')->group(function () {
     Route::resource('clients', ClientController::class);
     Route::resource('categories', CategoryController::class);
     Route::resource('products', ProductController::class);
+
+    Route::get('/products/{product}/assets', [AssetController::class, 'index'])->name('products.assets.index');
+    Route::post('/products/{product}/assets', [AssetController::class, 'store'])->name('products.assets.store');
+    Route::delete('/assets/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
+
+    Route::get('/rentals', [RentalController::class, 'index'])->name('rentals.index');
+    Route::get('/rentals/create', [RentalController::class, 'create'])->name('rentals.create');
+    Route::post('/rentals', [RentalController::class, 'store'])->name('rentals.store');
+
+    Route::post('/products/{product}/assets', [AssetController::class, 'store'])->name('products.assets.store');
+    Route::put('/assets/{asset}', [AssetController::class, 'update'])->name('assets.update');
+    Route::delete('/assets/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

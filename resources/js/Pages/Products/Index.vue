@@ -35,6 +35,7 @@ const closeModal = () => {
 </script>
 
 <template>
+
     <Head title="Produtos" />
 
     <AuthenticatedLayout>
@@ -44,7 +45,7 @@ const closeModal = () => {
                     Gestão de Produtos
                 </h2>
                 <Link :href="route('products.create')">
-                    <PrimaryButton>Novo Produto</PrimaryButton>
+                <PrimaryButton>Novo Produto</PrimaryButton>
                 </Link>
             </div>
         </template>
@@ -56,10 +57,18 @@ const closeModal = () => {
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estoque</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Nome</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Categoria</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Estoque</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status</th>
                                     <th scope="col" class="relative px-6 py-3"><span class="sr-only">Ações</span></th>
                                 </tr>
                             </thead>
@@ -69,17 +78,29 @@ const closeModal = () => {
                                     <td class="px-6 py-4 whitespace-nowrap">{{ product.category?.name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ product.stock_quantity }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span :class="product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                        <span
+                                            :class="product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
                                             {{ product.is_active ? 'Ativo' : 'Inativo' }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                        <Link :href="route('products.edit', product.id)" class="text-indigo-600 hover:text-indigo-900">Editar</Link>
-                                        <button @click="confirmProductDeletion(product.id)" class="text-red-600 hover:text-red-900">Apagar</button>
+                                        <Link :href="route('products.edit', product.id)"
+                                            class="text-indigo-600 hover:text-indigo-900">Editar
+                                        </Link>
+                                        <button @click="confirmProductDeletion(product.id)"
+                                            class="text-red-600 hover:text-red-900">Apagar
+                                        </button>
+                                        <Link v-if="product.tracking_type === 'SERIALIZED'"
+                                            :href="route('products.assets.index', product.id)"
+                                            class="text-blue-600 hover:text-blue-900">
+                                        Gerir Ativos
+                                        </Link>
                                     </td>
                                 </tr>
                                 <tr v-if="products.data.length === 0">
-                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">Nenhum produto encontrado.</td>
+                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">Nenhum produto
+                                        encontrado.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -94,7 +115,8 @@ const closeModal = () => {
                 <p class="mt-1 text-sm text-gray-600">Esta ação não pode ser desfeita.</p>
                 <div class="mt-6 flex justify-end">
                     <SecondaryButton @click="closeModal"> Cancelar </SecondaryButton>
-                    <DangerButton class="ms-3" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" @click="deleteProduct">
+                    <DangerButton class="ms-3" :class="{ 'opacity-25': form.processing }" :disabled="form.processing"
+                        @click="deleteProduct">
                         Apagar Produto
                     </DangerButton>
                 </div>

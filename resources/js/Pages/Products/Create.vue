@@ -5,7 +5,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
-import Checkbox from '@/Components/Checkbox.vue'; // Importe o Checkbox
+import Checkbox from '@/Components/Checkbox.vue';
 import type { Category } from '@/types';
 
 // O controller envia a lista de categorias, que recebemos aqui.
@@ -13,18 +13,24 @@ const props = defineProps<{
     categories: Category[];
 }>();
 
+// CORREÇÃO: Os campos numéricos são inicializados como números (0).
 const form = useForm({
     name: '',
     sku: '',
     description: '',
     category_id: null,
-    tracking_type: 'BULK',
-    stock_quantity: 0 || '',
-    replacement_value: 0 || '',
+    tracking_type: 'BULK', // Valor padrão
+    stock_quantity: 0,
+    replacement_value: 0,
     is_active: true,
 });
 
 const submit = () => {
+    // CORREÇÃO: Adicionada lógica para garantir que a quantidade é 0
+    // se o rastreamento for por número de série.
+    if (form.tracking_type !== 'BULK') {
+        form.stock_quantity = 0;
+    }
     form.post(route('products.store'));
 };
 </script>
@@ -51,7 +57,7 @@ const submit = () => {
                                     <InputError class="mt-2" :message="form.errors.name" />
                                 </div>
                                 <div>
-                                    <InputLabel for="sku" value="SKU (Código)" />
+                                    <InputLabel for="sku" value="SKU (Código do Modelo)" />
                                     <TextInput id="sku" type="text" class="mt-1 block w-full" v-model="form.sku" required />
                                     <InputError class="mt-2" :message="form.errors.sku" />
                                 </div>
@@ -81,7 +87,7 @@ const submit = () => {
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                                 <div>
                                     <InputLabel value="Tipo de Rastreamento" />
                                     <div class="mt-2 space-y-2">
@@ -96,6 +102,8 @@ const submit = () => {
                                     </div>
                                     <InputError class="mt-2" :message="form.errors.tracking_type" />
                                 </div>
+
+                                <!-- CORREÇÃO: Este bloco só aparece se o tipo for 'BULK' -->
                                 <div v-if="form.tracking_type === 'BULK'">
                                     <InputLabel for="stock_quantity" value="Quantidade em Estoque" />
                                     <TextInput id="stock_quantity" type="number" class="mt-1 block w-full" v-model="form.stock_quantity" required />
