@@ -10,6 +10,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetManagementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RentalController;
+use App\Models\RentalItem;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -51,6 +52,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/asset-management', [AssetManagementController::class, 'index'])->name('asset-management.index');
     Route::patch('/asset-management/{asset}/status', [AssetManagementController::class, 'updateStatus'])->name('asset-management.updateStatus');
+
+    Route::patch('/asset-management/bulk/{rental_item}', [AssetManagementController::class, 'updateBulkStatus'])->name('asset-management.bulk.update');
 });
 
 require __DIR__ . '/auth.php';

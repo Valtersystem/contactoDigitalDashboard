@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 const props = withDefaults(
     defineProps<{
-        align?: 'left' | 'right';
+        align?: 'left' | 'right' | 'top'; // Adicionada a opção 'top'
         width?: '48';
         contentClasses?: string;
     }>(),
@@ -30,13 +30,24 @@ const widthClass = computed(() => {
 });
 
 const alignmentClasses = computed(() => {
-    if (props.align === 'left') {
-        return 'ltr:origin-top-left rtl:origin-top-right start-0';
-    } else if (props.align === 'right') {
-        return 'ltr:origin-top-right rtl:origin-top-left end-0';
-    } else {
-        return 'origin-top';
+    switch (props.align) {
+        case 'left':
+            return 'origin-top-left start-0';
+        case 'top':
+            // Define que a origem da animação é a base e alinha à direita
+            return 'origin-bottom end-0';
+        case 'right':
+        default:
+            return 'origin-top-right end-0';
     }
+});
+
+// Nova computada para classes de posicionamento vertical
+const positionClasses = computed(() => {
+    if (props.align === 'top') {
+        return 'bottom-full mb-2'; // Posiciona acima do botão
+    }
+    return 'mt-2'; // Posicionamento padrão (abaixo do botão)
 });
 
 const open = ref(false);
@@ -48,7 +59,6 @@ const open = ref(false);
             <slot name="trigger" />
         </div>
 
-        <!-- Full Screen Dropdown Overlay -->
         <div
             v-show="open"
             class="fixed inset-0 z-40"
@@ -66,7 +76,7 @@ const open = ref(false);
             <div
                 v-show="open"
                 class="absolute z-50 mt-2 rounded-md shadow-lg"
-                :class="[widthClass, alignmentClasses]"
+                :class="[widthClass, alignmentClasses, positionClasses]"
                 style="display: none"
                 @click="open = false"
             >

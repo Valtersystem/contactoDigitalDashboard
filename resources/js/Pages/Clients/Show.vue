@@ -11,11 +11,9 @@ const props = defineProps<{
         active_rentals: number;
         completed_rentals: number;
     };
+    // Nova prop para receber os itens ativamente alugados
+    activeRentalItems: (RentalItem & { product: Product, asset?: Asset, rental_id: number })[];
 }>();
-
-// A página de devolução já existe e funciona bem.
-// Vamos simplesmente redirecionar para ela, o que é mais limpo e simples.
-// Não precisamos mais de lógica de modal ou de um segundo formulário aqui.
 </script>
 
 <template>
@@ -71,6 +69,35 @@ const props = defineProps<{
 
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
+                            <h3 class="text-lg font-medium text-gray-900">Produtos Atualmente Alugados</h3>
+                            <div class="mt-4 space-y-2">
+                                <div v-if="!activeRentalItems || activeRentalItems.length === 0" class="text-center text-gray-500 py-4 border-t">
+                                    Este cliente não tem produtos alugados no momento.
+                                </div>
+                                <div v-else>
+                                    <div v-for="item in activeRentalItems" :key="item.id" class="flex items-center gap-4 p-3 border-t">
+                                        <img class="h-12 w-12 rounded-md object-cover flex-shrink-0" :src="item.product.image_url ? `/storage/${item.product.image_url}` : `https://ui-avatars.com/api/?name=${item.product.name.replace(/\s/g, '+')}&background=e8f0fe&color=3730a3`" :alt="item.product.name">
+                                        <div class="flex-grow">
+                                            <p class="font-semibold text-gray-800">{{ item.product.name }}</p>
+                                            <p v-if="item.product.tracking_type === 'SERIALIZED'" class="text-sm text-gray-600">
+                                                N/S: <span class="font-mono">{{ item.asset?.serial_number }}</span>
+                                            </p>
+                                            <p v-if="item.product.tracking_type === 'BULK'" class="text-sm text-gray-600">
+                                                Quantidade: <span class="font-semibold">{{ item.quantity_rented }}</span>
+                                            </p>
+                                        </div>
+                                        <Link :href="route('rentals.return.form', item.rental_id)"
+                                            class="flex-shrink-0 text-sm text-white bg-primary hover:bg-primary-light rounded-md px-3 py-1.5 transition-colors">
+                                            Devolver
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6">
                             <h3 class="text-lg font-medium text-gray-900">Histórico de Aluguéis</h3>
                             <div class="mt-4 space-y-4">
                                 <div v-if="!client.rentals || client.rentals.length === 0" class="text-center text-gray-500 py-4">
@@ -97,7 +124,7 @@ const props = defineProps<{
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="{ 'bg-blue-100 text-blue-800': rental.status === 'Alugado', 'bg-yellow-100 text-yellow-800': rental.status === 'Atrasado', 'bg-green-100 text-green-800': rental.status === 'Devolvido' }">
                                                 {{ rental.status }}
                                             </span>
-                                            <Link v-if="rental.status === 'Alugado' || rental.status === 'Atrasado'"
+                                            <Link v-if="(rental.status === 'Alugado' || rental.status === 'Atrasado') && !activeRentalItems.find(i => i.rental_id === rental.id)"
                                                   :href="route('rentals.return.form', rental.id)"
                                                   class="mt-2 block w-full text-center text-sm text-white bg-primary hover:bg-primary-light rounded-md px-3 py-1 transition-colors">
                                                 Devolver

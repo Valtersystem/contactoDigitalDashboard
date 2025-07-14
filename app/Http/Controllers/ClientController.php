@@ -79,22 +79,28 @@ class ClientController extends Controller
 
     public function show(Client $client): Response
     {
-
         $client->load(['rentals' => function ($query) {
             $query->latest()->with(['rentalItems' => function ($itemQuery) {
-                $itemQuery->with('product:id,name,tracking_type', 'asset:id,serial_number');
+                // Adicionado image_url à consulta do produto
+                $itemQuery->with('product:id,name,tracking_type,image_url', 'asset:id,serial_number');
             }]);
         }]);
 
+        // Filtra os alugueis ativos
+        $activeRentals = $client->rentals->whereIn('status', ['Alugado', 'Atrasado']);
+        // Extrai os itens desses alugueis
+        $activeRentalItems = $activeRentals->pluck('rentalItems')->flatten();
+
         $stats = [
             'total_rentals' => $client->rentals->count(),
-            'active_rentals' => $client->rentals->whereIn('status', ['Alugado', 'Atrasado'])->count(),
+            'active_rentals' => $activeRentals->count(),
             'completed_rentals' => $client->rentals->where('status', 'Devolvido')->count(),
         ];
 
         return Inertia::render('Clients/Show', [
             'client' => $client,
             'stats' => $stats,
+            'activeRentalItems' => $activeRentalItems, // Envia os itens ativos para a view
         ]);
     }
 

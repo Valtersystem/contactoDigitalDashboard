@@ -46,31 +46,34 @@ const getMaxQuantity = (item: RentalItem) => {
     return item.quantity_rented ?? 1;
 };
 
-// --- NOVA FUNÇÃO REATIVA ---
-function updateReturnedQuantity(index: number) {
+// --- FUNÇÃO DE LÓGICA ATUALIZADA ---
+function updateQuantities(index: number, changedField: 'returned' | 'damaged' | 'lost') {
     const originalItem = props.rental.rental_items[index];
     const formItem = form.items[index];
 
     const totalRented = originalItem.quantity_rented ?? 1;
+    let returned = Number(formItem.quantity_returned) || 0;
     let damaged = Number(formItem.quantity_damaged) || 0;
     let lost = Number(formItem.quantity_lost) || 0;
 
-    // Garante que a soma de danificados e perdidos não ultrapasse o total alugado
-    if (damaged + lost > totalRented) {
-        // Se o utilizador aumentou os danificados, ajusta os perdidos e vice-versa
-        // Esta lógica pode ser ajustada conforme a sua preferência
-        lost = totalRented - damaged;
-        if (lost < 0) {
-            lost = 0;
-            damaged = totalRented;
-        }
-        formItem.quantity_lost = lost;
-        formItem.quantity_damaged = damaged;
-    }
+    // Garante que os valores não são negativos
+    if (returned < 0) { formItem.quantity_returned = 0; returned = 0; }
+    if (damaged < 0) { formItem.quantity_damaged = 0; damaged = 0; }
+    if (lost < 0) { formItem.quantity_lost = 0; lost = 0; }
 
-    // Calcula o valor devolvido
-    const returned = totalRented - damaged - lost;
-    formItem.quantity_returned = returned >= 0 ? returned : 0;
+    const totalEntered = returned + damaged + lost;
+
+    if (totalEntered > totalRented) {
+        const overage = totalEntered - totalRented;
+        // Reduz o valor do campo que acabou de ser alterado para que a soma não ultrapasse o total alugado
+        if (changedField === 'returned') {
+            formItem.quantity_returned -= overage;
+        } else if (changedField === 'damaged') {
+            formItem.quantity_damaged -= overage;
+        } else if (changedField === 'lost') {
+            formItem.quantity_lost -= overage;
+        }
+    }
 }
 </script>
 
@@ -127,13 +130,13 @@ function updateReturnedQuantity(index: number) {
                                                 <span v-else>{{ item.asset?.serial_number }}</span>
                                             </td>
                                             <td>
-                                                <TextInput type="number" class="w-20 bg-gray-100" v-model="form.items[index].quantity_returned" readonly />
+                                                <TextInput type="number" class="w-20" min="0" :max="getMaxQuantity(item)" v-model="form.items[index].quantity_returned" @input="updateQuantities(index, 'returned')" />
                                             </td>
                                             <td>
-                                                <TextInput type="number" class="w-20" min="0" :max="getMaxQuantity(item)" v-model="form.items[index].quantity_damaged" @input="updateReturnedQuantity(index)" />
+                                                <TextInput type="number" class="w-20" min="0" :max="getMaxQuantity(item)" v-model="form.items[index].quantity_damaged" @input="updateQuantities(index, 'damaged')" />
                                             </td>
                                             <td>
-                                                <TextInput type="number" class="w-20" min="0" :max="getMaxQuantity(item)" v-model="form.items[index].quantity_lost" @input="updateReturnedQuantity(index)" />
+                                                <TextInput type="number" class="w-20" min="0" :max="getMaxQuantity(item)" v-model="form.items[index].quantity_lost" @input="updateQuantities(index, 'lost')" />
                                             </td>
                                         </tr>
                                     </tbody>
