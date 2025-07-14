@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import type { Client, Product, Asset } from '@/types';
@@ -17,45 +17,77 @@ interface CartItem {
     quantity: number;
     stock?: number;
 }
+interface RentalForm {
+    client_id: number | null;
+    rental_date: string;
+    expected_return_date: string;
+    notes: string;
+    items: CartItem[];
+    [key: string]: any;
+}
 
 const props = defineProps<{
     clients: Client[];
     products: Product[];
 }>();
 
-const form = useForm({
+const form = useForm<RentalForm>({
     client_id: null,
     rental_date: new Date().toISOString().slice(0, 10),
     expected_return_date: '',
     notes: '',
-    items: [] as CartItem[],
+    items: [],
 });
 
-// --- Lógica para adicionar produtos ao carrinho ---
+const errors = form.errors as Partial<Record<keyof RentalForm, string | string[]>>;
+
+
 const selectedProduct = ref<Product | null>(null);
 const selectedAsset = ref<number | null>(null);
 const selectedQuantity = ref(1);
 
-// Produtos disponíveis para seleção (que ainda não estão no carrinho se forem serializados)
 const availableProducts = computed(() => {
-    const rentedAssetIds = new Set(form.items.map(item => item.asset_id));
+    const rentedAssetIds = new Set(
+        form.items
+            .map(item => item.asset_id)
+            .filter((id): id is number => id !== null)
+    );
+
     return props.products.map(p => {
         if (p.tracking_type === 'SERIALIZED') {
             return {
                 ...p,
-                assets: p.assets?.filter(a => !rentedAssetIds.has(a.id)),
+                assets: p.assets?.filter(a => a.status === 'Disponível' && !rentedAssetIds.has(a.id)),
             };
         }
         return p;
+    }).filter(p => {
+        if (p.tracking_type === 'SERIALIZED' && (!p.assets || p.assets.length === 0)) {
+            return false;
+        }
+        if (p.tracking_type === 'BULK' && p.stock_quantity <= 0) {
+            return false;
+        }
+        return true;
     });
+});
+
+watch(selectedProduct, () => {
+    selectedAsset.value = null;
+    selectedQuantity.value = 1;
 });
 
 function addProductToCart() {
     if (!selectedProduct.value) return;
-
     const product = selectedProduct.value;
 
     if (product.tracking_type === 'BULK') {
+        const stock = product.stock_quantity ?? 0;
+        if (selectedQuantity.value > stock) {
+            alert("Quantidade solicitada excede o estoque disponível.");
+            return;
+        }
+
         const existingItem = form.items.find(item => item.product_id === product.id);
         if (existingItem) {
             existingItem.quantity += selectedQuantity.value;
@@ -69,10 +101,14 @@ function addProductToCart() {
                 stock: product.stock_quantity
             });
         }
-    } else { // SERIALIZED
+    } else {
         if (!selectedAsset.value) return;
         const asset = product.assets?.find(a => a.id === selectedAsset.value);
         if (asset) {
+            if (form.items.some(item => item.asset_id === asset.id)) {
+                alert("Este item já foi adicionado ao carrinho.");
+                return;
+            }
             form.items.push({
                 product_id: product.id,
                 name: product.name,
@@ -81,13 +117,9 @@ function addProductToCart() {
                 serial_number: asset.serial_number,
                 quantity: 1,
             });
-            // Reseta a seleção para o próximo item
-            selectedAsset.value = null;
         }
     }
-    // Limpa a seleção de produto
     selectedProduct.value = null;
-    selectedQuantity.value = 1;
 }
 
 function removeItemFromCart(index: number) {
@@ -112,7 +144,6 @@ const submit = () => {
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <form @submit.prevent="submit" class="space-y-8">
-                    <!-- Detalhes do Aluguel -->
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Detalhes do Aluguel</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -122,17 +153,17 @@ const submit = () => {
                                     <option :value="null" disabled>Selecione um cliente</option>
                                     <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.business_name }}</option>
                                 </select>
-                                <InputError class="mt-2" :message="form.errors.client_id" />
+                                <InputError class="mt-2" :message="(form.errors as Record<keyof RentalForm, string[]>).client_id?.[0]" />
                             </div>
-                             <div>
+                            <div>
                                 <InputLabel for="rental_date" value="Data de Entrega" />
                                 <TextInput id="rental_date" type="date" class="mt-1 block w-full" v-model="form.rental_date" required />
-                                <InputError class="mt-2" :message="form.errors.rental_date" />
+                                <InputError class="mt-2" :message="errors.expected_return_date?.[0]" />
                             </div>
                             <div>
                                 <InputLabel for="expected_return_date" value="Data de Devolução Prevista" />
                                 <TextInput id="expected_return_date" type="date" class="mt-1 block w-full" v-model="form.expected_return_date" required />
-                                <InputError class="mt-2" :message="form.errors.expected_return_date" />
+                                <InputError class="mt-2" :message="errors.rental_date?.[0]" />
                             </div>
                         </div>
                         <div class="mt-6">
@@ -141,7 +172,6 @@ const submit = () => {
                         </div>
                     </div>
 
-                    <!-- Adicionar Itens -->
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Adicionar Itens ao Aluguel</h3>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -172,7 +202,6 @@ const submit = () => {
                         </div>
                     </div>
 
-                    <!-- Itens do Carrinho -->
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                          <h3 class="text-lg font-medium text-gray-900 mb-4">Itens do Aluguel</h3>
                          <div class="border rounded-lg">
@@ -201,10 +230,9 @@ const submit = () => {
                                 </tbody>
                             </table>
                          </div>
-                         <InputError class="mt-2" :message="form.errors.items" />
+                         <InputError class="mt-2" :message="errors.items?.[0]" />
                     </div>
 
-                    <!-- Botão Final -->
                     <div class="flex justify-end">
                         <PrimaryButton :disabled="form.processing || form.items.length === 0">
                             Registar Aluguel

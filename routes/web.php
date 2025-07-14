@@ -7,6 +7,8 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AssetController;
+use App\Http\Controllers\AssetManagementController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RentalController;
 use Inertia\Inertia;
 
@@ -19,9 +21,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', DashboardController::class)
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -40,9 +42,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/rentals/create', [RentalController::class, 'create'])->name('rentals.create');
     Route::post('/rentals', [RentalController::class, 'store'])->name('rentals.store');
 
+    Route::get('/rentals/{rental}/return', [RentalController::class, 'showReturnForm'])->name('rentals.return.form');
+    Route::post('/rentals/{rental}/return', [RentalController::class, 'processReturn'])->name('rentals.return.process');
+
     Route::post('/products/{product}/assets', [AssetController::class, 'store'])->name('products.assets.store');
     Route::put('/assets/{asset}', [AssetController::class, 'update'])->name('assets.update');
     Route::delete('/assets/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
+
+    Route::get('/asset-management', [AssetManagementController::class, 'index'])->name('asset-management.index');
+    Route::patch('/asset-management/{asset}/status', [AssetManagementController::class, 'updateStatus'])->name('asset-management.updateStatus');
 });
 
 require __DIR__ . '/auth.php';

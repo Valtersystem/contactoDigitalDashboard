@@ -7,11 +7,13 @@ use App\Models\Client;
 use App\Models\Product;
 use App\Models\Rental;
 use App\Models\RentalItem;
+use App\Models\StockMovement; // Adicionado
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\Rule; // Adicionado
 
 class RentalController extends Controller
 {
@@ -20,10 +22,7 @@ class RentalController extends Controller
      */
     public function create(): Response
     {
-        // Carregamos todos os dados necessários para o formulário
         $clients = Client::orderBy('business_name')->get(['id', 'business_name']);
-
-        // Carregamos produtos ativos, e para os serializados, carregamos os seus ativos disponíveis
         $products = Product::where('is_active', true)
             ->with(['assets' => function ($query) {
                 $query->where('status', 'Disponível');
@@ -53,9 +52,7 @@ class RentalController extends Controller
             'items.*.asset_id' => 'nullable|exists:assets,id',
         ]);
 
-        // Usamos uma transação para garantir que todas as operações são bem sucedidas
         DB::transaction(function () use ($validated) {
-            // 1. Cria o registo do aluguel
             $rental = Rental::create([
                 'client_id' => $validated['client_id'],
                 'rental_date' => $validated['rental_date'],
@@ -64,11 +61,9 @@ class RentalController extends Controller
                 'status' => 'Alugado',
             ]);
 
-            // 2. Itera sobre os itens do "carrinho"
             foreach ($validated['items'] as $item) {
                 $product = Product::find($item['product_id']);
 
-                // Adiciona o item ao aluguel
                 RentalItem::create([
                     'rental_id' => $rental->id,
                     'product_id' => $product->id,
@@ -76,10 +71,16 @@ class RentalController extends Controller
                     'asset_id' => $item['asset_id'] ?? null,
                 ]);
 
-                // 3. Atualiza o estoque
                 if ($product->tracking_type === 'BULK') {
                     $product->decrement('stock_quantity', $item['quantity']);
-                } else { // SERIALIZED
+                    StockMovement::create([
+                        'product_id' => $product->id,
+                        'rental_id' => $rental->id,
+                        'type' => 'Saída de Aluguel',
+                        'quantity_change' => -$item['quantity'],
+                        'stock_after_change' => $product->fresh()->stock_quantity,
+                    ]);
+                } else {
                     Asset::where('id', $item['asset_id'])->update(['status' => 'Alugado']);
                 }
             }
@@ -93,10 +94,100 @@ class RentalController extends Controller
      */
     public function index(): Response
     {
-        // Vamos criar esta página mais tarde
         $rentals = Rental::with('client')->latest()->paginate(10);
         return Inertia::render('Rentals/Index', [
             'rentals' => $rentals,
         ]);
+    }
+
+    /**
+     * Mostra o formulário para registar a devolução de um aluguel.
+     */
+    public function showReturnForm(Rental $rental): Response
+    {
+        $rental->load('client', 'rentalItems.product', 'rentalItems.asset');
+
+        return Inertia::render('Rentals/Return', [
+            'rental' => $rental,
+        ]);
+    }
+
+    /**
+     * Processa a devolução de um aluguel.
+     */
+    public function processReturn(Request $request, Rental $rental): RedirectResponse
+    {
+        // 1. Validação dos dados do formulário
+        $validated = $request->validate([
+            'actual_return_date' => 'required|date',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.rental_item_id' => ['required', Rule::exists('rental_items', 'id')->where('rental_id', $rental->id)],
+            'items.*.quantity_returned' => 'required|integer|min:0',
+            'items.*.quantity_damaged' => 'required|integer|min:0',
+            'items.*.quantity_lost' => 'required|integer|min:0',
+        ]);
+
+        // 2. Usar uma transação para garantir a consistência dos dados
+        DB::transaction(function () use ($validated, $rental) {
+            $totalItems = $rental->rentalItems()->count();
+            $itemsFullyReturned = 0;
+
+            // 3. Itera sobre cada item devolvido
+            foreach ($validated['items'] as $returnItemData) {
+                $rentalItem = RentalItem::with('product', 'asset')->find($returnItemData['rental_item_id']);
+
+                if (!$rentalItem) continue;
+
+                // 4. Atualiza as quantidades no item do aluguel
+                $rentalItem->update([
+                    'quantity_returned' => $returnItemData['quantity_returned'],
+                    'quantity_damaged' => $returnItemData['quantity_damaged'],
+                    'quantity_lost' => $returnItemData['quantity_lost'],
+                ]);
+
+                $product = $rentalItem->product;
+
+                // 5. Atualiza o estoque ou o status do ativo
+                if ($product->tracking_type === 'BULK') {
+                    if ($returnItemData['quantity_returned'] > 0) {
+                        $product->increment('stock_quantity', $returnItemData['quantity_returned']);
+                        StockMovement::create([
+                            'product_id' => $product->id,
+                            'rental_id' => $rental->id,
+                            'type' => 'Devolução',
+                            'quantity_change' => $returnItemData['quantity_returned'],
+                            'stock_after_change' => $product->fresh()->stock_quantity,
+                        ]);
+                    }
+                } else { // SERIALIZED
+                    if ($rentalItem->asset) {
+                        $newStatus = 'Disponível';
+                        if ($returnItemData['quantity_damaged'] > 0) {
+                            $newStatus = 'Em Manutenção';
+                        } elseif ($returnItemData['quantity_lost'] > 0) {
+                            $newStatus = 'Perdido';
+                        }
+                        $rentalItem->asset->update(['status' => $newStatus]);
+                    }
+                }
+
+                $totalAccounted = $returnItemData['quantity_returned'] + $returnItemData['quantity_damaged'] + $returnItemData['quantity_lost'];
+                if ($totalAccounted >= ($rentalItem->quantity_rented ?? 1)) {
+                    $itemsFullyReturned++;
+                }
+            }
+
+            // 6. Atualiza o status geral do aluguel se todos os itens foram retornados
+            if ($itemsFullyReturned >= $totalItems) {
+                $rental->update([
+                    'status' => 'Devolvido',
+                    'actual_return_date' => $validated['actual_return_date'],
+                    'notes' => $rental->notes . "\n\nObservações da devolução:\n" . $validated['notes'],
+                ]);
+            }
+        });
+
+        return redirect()->route('rentals.index')->with('success', 'Devolução processada com sucesso!');
     }
 }

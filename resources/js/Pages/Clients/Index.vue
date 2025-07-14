@@ -81,6 +81,7 @@ const closeModal = () => {
                                     <td class="px-6 py-4 whitespace-nowrap">{{ client.nif }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                         <Link :href="route('clients.edit', client.id)" class="text-indigo-600 hover:text-indigo-900">Editar</Link>
+                                        <Link :href="route('clients.show', client.id)" class="text-indigo-600 hover:text-indigo-900">Visualizar</Link>
                                         <!-- Botão para apagar que chama a função de confirmação -->
                                         <button @click="confirmClientDeletion(client.id)" class="text-red-600 hover:text-red-900">Apagar</button>
                                     </td>

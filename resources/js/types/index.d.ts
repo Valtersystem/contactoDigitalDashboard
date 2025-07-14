@@ -25,6 +25,8 @@ export interface Client {
     address: string | null;
     created_at: string;
     updated_at: string;
+    photo_url?: string | null;
+    rentals?: Rental[];
 }
 
 export interface Category {
@@ -45,6 +47,8 @@ export interface Product {
     is_active: boolean;
     category?: Category;
     assets?: Asset[];
+    assets_count?: number;
+    image_url?: string | null;
 }
 
 export interface Asset {
@@ -63,7 +67,8 @@ export interface Rental {
     expected_return_date: string;
     actual_return_date: string | null;
     status: string;
-    client?: Client; // Relação opcional
+    client?: Client;
+    rental_items?: RentalItem[];
 }
 
 export interface RentalItem {
@@ -93,4 +98,17 @@ export interface PaginatedData<T> {
         to: number;
         total: number;
     };
+}
+
+
+export interface RentalItem {
+    id: number;
+    product_id: number;
+    asset_id: number | null;
+    quantity_rented: number | null;
+    quantity_returned: number;
+    quantity_damaged: number;
+    quantity_lost: number;
+    product: Product;
+    asset?: Asset;
 }

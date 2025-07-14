@@ -15,6 +15,19 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            // --- ADICIONE ESTE BLOCO DE CORES ---
+            colors: {
+                'primary': {
+                    light: '#36a9e9', // Tom mais claro para hover
+                    DEFAULT: '#0494E3', // A cor principal do seu logo
+                    dark: '#037ab8',  // Tom mais escuro para active/focus
+                },
+                'dark': {
+                    DEFAULT: '#3a3a3a', // Cinza escuro para texto principal
+                    light: '#6b7280', // Cinza mais claro (equivale a gray-500)
+                }
+            },
+            // --- FIM DO BLOCO DE CORES ---
         },
     },
 

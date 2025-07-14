@@ -59,6 +59,10 @@ const closeModal = () => {
                                 <tr>
                                     <th scope="col"
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Imagem
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Nome</th>
                                     <th scope="col"
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -74,9 +78,23 @@ const closeModal = () => {
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <tr v-for="product in products.data" :key="product.id">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <img v-if="product.image_url" :src="`/storage/${product.image_url}`"
+                                            :alt="product.name" class="h-10 w-10 rounded-full object-cover">
+                                        <span v-else
+                                            class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">Sem
+                                            Foto</span>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ product.name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ product.category?.name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ product.stock_quantity }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <template v-if="product.tracking_type === 'SERIALIZED'">
+                                            {{ product.assets_count }}
+                                        </template>
+                                        <template v-else>
+                                            {{ product.stock_quantity }}
+                                        </template>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span
                                             :class="product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"

@@ -8,34 +8,39 @@ import InputError from '@/Components/InputError.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import type { Category } from '@/types';
 
-// O controller envia a lista de categorias, que recebemos aqui.
 const props = defineProps<{
     categories: Category[];
 }>();
 
-// CORREÇÃO: Os campos numéricos são inicializados como números (0).
 const form = useForm({
     name: '',
     sku: '',
     description: '',
     category_id: null,
-    tracking_type: 'BULK', // Valor padrão
+    tracking_type: 'BULK',
     stock_quantity: 0,
     replacement_value: 0,
     is_active: true,
+    image: null as File | null,
 });
 
 const submit = () => {
-    // CORREÇÃO: Adicionada lógica para garantir que a quantidade é 0
-    // se o rastreamento for por número de série.
     if (form.tracking_type !== 'BULK') {
         form.stock_quantity = 0;
     }
     form.post(route('products.store'));
 };
+
+function handleImageUpload(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+        form.image = target.files[0];
+    }
+}
 </script>
 
 <template>
+
     <Head title="Novo Produto" />
 
     <AuthenticatedLayout>
@@ -53,26 +58,40 @@ const submit = () => {
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <InputLabel for="name" value="Nome do Produto" />
-                                    <TextInput id="name" type="text" class="mt-1 block w-full" v-model="form.name" required autofocus />
+                                    <TextInput id="name" type="text" class="mt-1 block w-full" v-model="form.name"
+                                        required autofocus />
                                     <InputError class="mt-2" :message="form.errors.name" />
                                 </div>
                                 <div>
                                     <InputLabel for="sku" value="SKU (Código do Modelo)" />
-                                    <TextInput id="sku" type="text" class="mt-1 block w-full" v-model="form.sku" required />
+                                    <TextInput id="sku" type="text" class="mt-1 block w-full" v-model="form.sku"
+                                        required />
                                     <InputError class="mt-2" :message="form.errors.sku" />
                                 </div>
                             </div>
 
                             <div>
                                 <InputLabel for="description" value="Descrição" />
-                                <textarea id="description" v-model="form.description" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"></textarea>
+                                <textarea id="description" v-model="form.description"
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"></textarea>
                                 <InputError class="mt-2" :message="form.errors.description" />
+                            </div>
+
+                            <div>
+                                <InputLabel for="image" value="Imagem do Produto" />
+                                <input id="image" type="file" @change="handleImageUpload" class="mt-1 block w-full" />
+                                <progress v-if="form.progress" :value="form.progress.percentage" max="100">
+                                    {{ form.progress.percentage }}%
+                                </progress>
+                                <InputError class="mt-2" :message="form.errors.image" />
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <InputLabel for="category_id" value="Categoria" />
-                                    <select id="category_id" v-model="form.category_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                    <select id="category_id" v-model="form.category_id"
+                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                        required>
                                         <option :value="null" disabled>Selecione uma categoria</option>
                                         <option v-for="category in categories" :key="category.id" :value="category.id">
                                             {{ category.name }}
@@ -82,7 +101,8 @@ const submit = () => {
                                 </div>
                                 <div>
                                     <InputLabel for="replacement_value" value="Valor de Reposição (€)" />
-                                    <TextInput id="replacement_value" type="number" step="0.01" class="mt-1 block w-full" v-model="form.replacement_value" required />
+                                    <TextInput id="replacement_value" type="number" step="0.01"
+                                        class="mt-1 block w-full" v-model="form.replacement_value" required />
                                     <InputError class="mt-2" :message="form.errors.replacement_value" />
                                 </div>
                             </div>
@@ -92,21 +112,23 @@ const submit = () => {
                                     <InputLabel value="Tipo de Rastreamento" />
                                     <div class="mt-2 space-y-2">
                                         <label class="flex items-center">
-                                            <input type="radio" v-model="form.tracking_type" value="BULK" class="text-indigo-600 focus:ring-indigo-500">
+                                            <input type="radio" v-model="form.tracking_type" value="BULK"
+                                                class="text-indigo-600 focus:ring-indigo-500">
                                             <span class="ms-2">Em Massa (Quantidade)</span>
                                         </label>
                                         <label class="flex items-center">
-                                            <input type="radio" v-model="form.tracking_type" value="SERIALIZED" class="text-indigo-600 focus:ring-indigo-500">
+                                            <input type="radio" v-model="form.tracking_type" value="SERIALIZED"
+                                                class="text-indigo-600 focus:ring-indigo-500">
                                             <span class="ms-2">Por Número de Série</span>
                                         </label>
                                     </div>
                                     <InputError class="mt-2" :message="form.errors.tracking_type" />
                                 </div>
 
-                                <!-- CORREÇÃO: Este bloco só aparece se o tipo for 'BULK' -->
                                 <div v-if="form.tracking_type === 'BULK'">
                                     <InputLabel for="stock_quantity" value="Quantidade em Estoque" />
-                                    <TextInput id="stock_quantity" type="number" class="mt-1 block w-full" v-model="form.stock_quantity" required />
+                                    <TextInput id="stock_quantity" type="number" class="mt-1 block w-full"
+                                        v-model="form.stock_quantity" required />
                                     <InputError class="mt-2" :message="form.errors.stock_quantity" />
                                 </div>
                             </div>
@@ -120,7 +142,9 @@ const submit = () => {
 
                             <div class="flex items-center gap-4">
                                 <PrimaryButton :disabled="form.processing">Salvar</PrimaryButton>
-                                <Link :href="route('products.index')" class="text-sm text-gray-600 hover:text-gray-900">Cancelar</Link>
+                                <Link :href="route('products.index')" class="text-sm text-gray-600 hover:text-gray-900">
+                                Cancelar
+                                </Link>
                             </div>
                         </form>
                     </div>
