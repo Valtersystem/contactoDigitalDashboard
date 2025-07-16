@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\Rule;
 
 class AssetController extends Controller
 {
@@ -43,6 +44,23 @@ class AssetController extends Controller
 
         return back()->with('success', 'Ativo adicionado com sucesso.');
     }
+
+    public function updateStatus(Request $request, Asset $asset): RedirectResponse
+    {
+        // Apenas permitir alterar o status se o ativo não estiver associado a um aluguel ativo
+        if ($asset->status === 'Alugado') {
+            return back()->with('error', 'Não pode alterar o status de um ativo que está atualmente alugado.');
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['Disponível', 'Em Manutenção', 'Perdido'])],
+        ]);
+
+        $asset->update(['status' => $validated['status']]);
+
+        return back()->with('success', 'Status do ativo atualizado com sucesso.');
+    }
+
 
     /**
      * Apaga um ativo específico.
