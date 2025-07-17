@@ -13,15 +13,21 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $products = Product::with('category')
             ->withCount('assets')
+            ->when($request->input('search'), function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('sku', 'like', "%{$search}%");
+            })
             ->latest()
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
         return Inertia::render('Products/Index', [
-            'products' => $products
+            'products' => $products,
+            'filters' => $request->only(['search'])
         ]);
     }
 

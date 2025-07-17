@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 
-// MUDANÇA: Alteramos o tipo para aceitar String ou Number.
-const model = defineModel<string | number>({
+// O 'defineModel' agora aceita 'null' como um tipo válido
+const model = defineModel<string | number | null>({
     required: true,
 });
 
