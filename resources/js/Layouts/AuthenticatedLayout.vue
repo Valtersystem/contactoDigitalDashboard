@@ -44,7 +44,7 @@ watch(() => page.props.flash, (flash: any) => {
             <div>
                 <div class="px-4 py-6">
                     <Link :href="route('dashboard')">
-                    <ApplicationLogo class="block h-10 w-auto" />
+                    <ApplicationLogo imageName="logo-2.png" class="block h-10 w-auto" />
                     </Link>
                 </div>
 
