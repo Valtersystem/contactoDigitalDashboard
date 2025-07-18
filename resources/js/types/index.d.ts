@@ -112,3 +112,17 @@ export interface RentalItem {
     product: Product;
     asset?: Asset;
 }
+
+
+export interface Subscription {
+    id: number;
+    client_id: number;
+    product_id: number;
+    status: 'active' | 'cancelled' | 'unpaid';
+    start_date: string;
+    next_billing_date: string;
+    cancellation_date: string | null;
+    license_key: string | null;
+    client?: Client;
+    product?: Product;
+}

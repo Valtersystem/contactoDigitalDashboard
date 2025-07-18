@@ -76,6 +76,17 @@ watch(() => page.props.flash, (flash: any) => {
                                 Ativos Danificados/Perdidos
                             </NavLink>
                         </li>
+                        <li>
+                            <NavLink :href="route('reports.index')" :active="route().current('reports.index')">
+                                Relatórios
+                            </NavLink>
+                        </li>
+                        <li class="pt-4">
+                            <Link :href="route('subscriptions.index')"
+                                class="w-full flex items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-400 transition-colors">
+                            Assinaturas
+                            </Link>
+                        </li>
                         <li class="pt-4">
                             <Link :href="route('rentals.create')"
                                 class="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-light transition-colors">

@@ -9,8 +9,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetManagementController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FinancialReportController;
 use App\Http\Controllers\RentalController;
-
+use App\Http\Controllers\SubscriptionController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -52,6 +53,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/asset-management', [AssetManagementController::class, 'index'])->name('asset-management.index');
     Route::patch('/asset-management/bulk/{rental_item}', [AssetManagementController::class, 'updateBulkStatus'])->name('asset-management.bulk.update');
     Route::patch('/asset-management/serialized/{asset}/status', [AssetManagementController::class, 'updateStatus'])->name('asset-management.updateStatus');
+
+    Route::resource('subscriptions', SubscriptionController::class);
+    Route::get('/reports', [FinancialReportController::class, 'index'])->name('reports.index');
+
+
 });
 
 require __DIR__ . '/auth.php';

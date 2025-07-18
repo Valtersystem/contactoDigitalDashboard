@@ -112,14 +112,18 @@ function handleImageUpload(event: Event) {
                                     <InputLabel value="Tipo de Rastreamento" />
                                     <div class="mt-2 space-y-2">
                                         <label class="flex items-center">
-                                            <input type="radio" v-model="form.tracking_type" value="BULK"
-                                                class="text-indigo-600 focus:ring-indigo-500">
+                                            <input type="radio" v-model="form.tracking_type" value="BULK" class="...">
                                             <span class="ms-2">Em Massa (Quantidade)</span>
                                         </label>
                                         <label class="flex items-center">
                                             <input type="radio" v-model="form.tracking_type" value="SERIALIZED"
-                                                class="text-indigo-600 focus:ring-indigo-500">
+                                                class="...">
                                             <span class="ms-2">Por Número de Série</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" v-model="form.tracking_type" value="LICENSE"
+                                                class="text-indigo-600 focus:ring-indigo-500">
+                                            <span class="ms-2">Licença (Assinatura)</span>
                                         </label>
                                     </div>
                                     <InputError class="mt-2" :message="form.errors.tracking_type" />
