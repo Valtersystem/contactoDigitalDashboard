@@ -12,6 +12,8 @@ import 'sweetalert2/dist/sweetalert2.min.css';
 const showingNavigationDropdown = ref(false);
 const page = usePage();
 
+const isSidebarOpen = ref(false);
+
 watch(() => page.props.flash, (flash: any) => {
     if (flash.success) {
         Swal.fire({
@@ -40,7 +42,10 @@ watch(() => page.props.flash, (flash: any) => {
 
 <template>
     <div class="flex h-screen bg-gray-100">
-        <div class="flex flex-col justify-between border-e bg-white w-64">
+        <aside
+            :class="['flex', 'h-full', 'flex-shrink-0', 'flex-col', 'justify-between', 'border-e', 'bg-white', 'w-64', 'transition-transform', 'duration-300', 'ease-in-out', 'lg:translate-x-0', { '-translate-x-full': !isSidebarOpen }]"
+            class="absolute lg:relative z-20"
+        >
             <div>
                 <div class="px-4 py-6">
                     <Link :href="route('dashboard')">
@@ -74,6 +79,11 @@ watch(() => page.props.flash, (flash: any) => {
                             <NavLink :href="route('asset-management.index')"
                                 :active="route().current('asset-management.*')">
                                 Ativos Danificados/Perdidos
+                            </NavLink>
+                        </li>
+                        <li>
+                            <NavLink :href="route('rentals.index')" :active="route().current('rentals.index')">
+                                Histórico de Alugueis
                             </NavLink>
                         </li>
                         <li>
@@ -125,11 +135,16 @@ watch(() => page.props.flash, (flash: any) => {
                     </div>
                 </div>
             </div>
-        </div>
+        </aside>
 
         <div class="flex-1 flex flex-col overflow-hidden">
             <header class="bg-white shadow" v-if="$slots.header">
-                <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 flex items-center">
+                    <button @click="isSidebarOpen = !isSidebarOpen" class="lg:hidden mr-4 text-gray-500 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
                     <slot name="header" />
                 </div>
             </header>
@@ -138,6 +153,7 @@ watch(() => page.props.flash, (flash: any) => {
                 <slot />
             </main>
         </div>
+        <div v-if="isSidebarOpen" @click="isSidebarOpen = false" class="fixed inset-0 bg-black opacity-50 z-10 lg:hidden"></div>
     </div>
 </template>
 
@@ -151,6 +167,6 @@ a.inline-flex {
 }
 
 a.border-indigo-400 {
-    background-color: #f0f5ff;
+    background-color: #f0f0f0;
 }
 </style>
